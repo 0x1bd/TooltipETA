@@ -1,0 +1,7 @@
+{
+  "text.autoconfig.tooltipeta.title": "TooltipETA-Konfiguration",
+  "text.autoconfig.tooltipeta.option.enabled": "Mod aktiviert",
+
+  "tooltip.tooltipeta.flight_time": "Flugzeit:",
+  "tooltip.tooltipeta.estimated_uses": "Geschätzte Verwendungen:"
+}
