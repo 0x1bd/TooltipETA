@@ -6,6 +6,7 @@
   "mixins": [
   ],
   "client": [
+    "ThrownTridentAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

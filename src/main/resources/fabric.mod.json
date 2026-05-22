@@ -3,7 +3,7 @@
   "id": "tooltipeta",
   "version": "${version}",
   "name": "TooltipETA",
-  "description": "Displays estimated uses for various items",
+  "description": "Displays durability estimates in item tooltips and Loyalty trident return ETA in the actionbar.",
   "authors": ["kvxd"],
   "contact": {},
   "license": "GPL-3.0",
@@ -12,6 +12,9 @@
   "entrypoints": {
     "client": [
       "org.kvxd.tooltipeta.TooltipETAClient"
+    ],
+    "modmenu": [
+      "org.kvxd.tooltipeta.TooltipETAModMenuIntegration"
     ]
   },
   "mixins": [
@@ -20,7 +23,11 @@
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-language-kotlin": ">=${kotlin_loader_version}",
-    "fabric": "*",
-    "minecraft": ">=1.21"
+    "fabric-api": "*",
+    "minecraft": ">=${minecraft_version}",
+    "yet_another_config_lib_v3": ">=${yacl_version}"
+  },
+  "suggests": {
+    "modmenu": ">=${modmenu_version}"
   }
 }

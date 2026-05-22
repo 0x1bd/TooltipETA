@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory
 class TooltipETAClient : ClientModInitializer {
 
     override fun onInitializeClient() {
+        TooltipETAConfigManager.load()
+        LoyaltyTridentReturnTracker.register()
         ItemTooltipCallback.EVENT.register { stack, _, _, lines ->
             TooltipHandler.appendTooltip(stack, lines)
         }
