@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.3.21"
-    id("net.fabricmc.fabric-loom") version "1.16-SNAPSHOT"
+    id("fabric-loom") version "1.16-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -30,12 +30,13 @@ repositories {
 
 dependencies {
     minecraft("com.mojang:minecraft:${project.property("minecraft_version")}")
-    implementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
-    implementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
+    mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
+    modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
+    modImplementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
 
-    implementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_api_version")}")
-    implementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
-    implementation("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_api_version")}")
+    modImplementation("dev.isxander:yet-another-config-lib:${project.property("yacl_version")}")
+    modCompileOnly("com.terraformersmc:modmenu:${project.property("modmenu_version")}")
 }
 
 tasks.processResources {

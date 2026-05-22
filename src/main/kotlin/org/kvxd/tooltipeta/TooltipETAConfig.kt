@@ -9,10 +9,10 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.gson.stream.JsonWriter
 import net.fabricmc.loader.api.FabricLoader
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.resources.Identifier
-import net.minecraft.world.item.Item
-import net.minecraft.world.item.Items
+import net.minecraft.registry.Registries
+import net.minecraft.util.Identifier
+import net.minecraft.item.Item
+import net.minecraft.item.Items
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -106,7 +106,7 @@ object TooltipETAConfigManager {
                     return
                 }
 
-                out.value(BuiltInRegistries.ITEM.getKey(value).toString())
+                out.value(Registries.ITEM.getId(value).toString())
             }
 
             override fun read(`in`: JsonReader): Item {
@@ -116,7 +116,11 @@ object TooltipETAConfigManager {
                 }
 
                 val id = Identifier.tryParse(`in`.nextString().trim()) ?: return Items.AIR
-                return BuiltInRegistries.ITEM.get(id).map { it.value() }.orElse(Items.AIR)
+                return if (Registries.ITEM.containsId(id)) {
+                    Registries.ITEM.get(id)
+                } else {
+                    Items.AIR
+                }
             }
         })
         .setPrettyPrinting()

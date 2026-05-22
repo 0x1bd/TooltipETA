@@ -13,10 +13,10 @@ import dev.isxander.yacl3.api.controller.ControllerBuilder
 import dev.isxander.yacl3.api.controller.DoubleSliderControllerBuilder
 import dev.isxander.yacl3.api.controller.EnumControllerBuilder
 import dev.isxander.yacl3.api.controller.ItemControllerBuilder
-import net.minecraft.client.gui.screens.Screen
-import net.minecraft.network.chat.Component
-import net.minecraft.world.item.Item
-import net.minecraft.world.item.Items
+import net.minecraft.client.gui.screen.Screen
+import net.minecraft.text.Text
+import net.minecraft.item.Item
+import net.minecraft.item.Items
 import java.util.Locale
 
 class TooltipETAModMenuIntegration : ModMenuApi {
@@ -232,7 +232,7 @@ class TooltipETAModMenuIntegration : ModMenuApi {
             DoubleSliderControllerBuilder.create(option)
                 .range(minimum, maximum)
                 .step(0.01)
-                .formatValue { value -> Component.literal(ETAUtils.formatPercent(value)) }
+                .formatValue { value -> Text.literal(ETAUtils.formatPercent(value)) }
         }
     }
 
@@ -251,8 +251,8 @@ class TooltipETAModMenuIntegration : ModMenuApi {
             .build()
     }
 
-    private fun text(path: String): Component {
-        return Component.translatable("config.${TooltipETAClient.ID}.$path")
+    private fun text(path: String): Text {
+        return Text.translatable("config.${TooltipETAClient.ID}.$path")
     }
 
     private fun description(path: String): OptionDescription {

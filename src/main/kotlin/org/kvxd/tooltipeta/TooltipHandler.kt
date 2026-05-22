@@ -1,18 +1,18 @@
 package org.kvxd.tooltipeta
 
-import net.minecraft.ChatFormatting
-import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
-import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
+import net.minecraft.util.Formatting
+import net.minecraft.client.MinecraftClient
+import net.minecraft.text.Text
+import net.minecraft.entity.player.PlayerEntity
+import net.minecraft.item.ItemStack
+import net.minecraft.item.Items
 
 object TooltipHandler {
 
-    fun appendTooltip(stack: ItemStack, lines: MutableList<Component>) {
-        val player = Minecraft.getInstance().player ?: return
+    fun appendTooltip(stack: ItemStack, lines: MutableList<Text>) {
+        val player = MinecraftClient.getInstance().player ?: return
         val config = TooltipETAConfigManager.config
-        if (!config.general.enabled || !stack.isDamageableItem || stack.maxDamage <= 0) return
+        if (!config.general.enabled || !stack.isDamageable || stack.getMaxDamage() <= 0) return
         if (!isWhitelisted(stack, config)) return
 
         when {
@@ -24,8 +24,8 @@ object TooltipHandler {
 
     private fun appendElytraTooltip(
         stack: ItemStack,
-        player: Player,
-        lines: MutableList<Component>,
+        player: PlayerEntity,
+        lines: MutableList<Text>,
         config: TooltipETAConfig
     ) {
         val seconds = ETAUtils.calculateElytraTime(stack, player)
@@ -36,13 +36,13 @@ object TooltipHandler {
             when (config.general.outputMode) {
                 TooltipETAConfig.OutputMode.DETAILED -> {
                     appendBaseHeader(lines, config, "tooltip.tooltipeta.flight_time")
-                    lines.add(Component.literal(" $formattedTime").withStyle(color))
+                    lines.add(Text.literal(" $formattedTime").formatted(color))
                     appendExtraInfoLines(stack, lines, config)
                 }
 
                 TooltipETAConfig.OutputMode.COMPACT -> {
                     appendBaseHeader(lines, config, "tooltip.tooltipeta.flight_time")
-                    lines.add(Component.translatable("tooltip.tooltipeta.compact_time", formattedTime).withStyle(color))
+                    lines.add(Text.translatable("tooltip.tooltipeta.compact_time", formattedTime).formatted(color))
                 }
             }
         }
@@ -50,8 +50,8 @@ object TooltipHandler {
 
     private fun appendToolTooltip(
         stack: ItemStack,
-        player: Player,
-        lines: MutableList<Component>,
+        player: PlayerEntity,
+        lines: MutableList<Text>,
         config: TooltipETAConfig
     ) {
         val uses = ETAUtils.calculateToolUses(stack, player)
@@ -62,13 +62,13 @@ object TooltipHandler {
             when (config.general.outputMode) {
                 TooltipETAConfig.OutputMode.DETAILED -> {
                     appendBaseHeader(lines, config, "tooltip.tooltipeta.estimated_uses")
-                    lines.add(Component.translatable("tooltip.tooltipeta.value_uses", formatted).withStyle(color))
+                    lines.add(Text.translatable("tooltip.tooltipeta.value_uses", formatted).formatted(color))
                     appendExtraInfoLines(stack, lines, config)
                 }
 
                 TooltipETAConfig.OutputMode.COMPACT -> {
                     appendBaseHeader(lines, config, "tooltip.tooltipeta.estimated_uses")
-                    lines.add(Component.translatable("tooltip.tooltipeta.compact_uses", formatted).withStyle(color))
+                    lines.add(Text.translatable("tooltip.tooltipeta.compact_uses", formatted).formatted(color))
                 }
             }
         }
@@ -76,8 +76,8 @@ object TooltipHandler {
 
     private fun appendArmorTooltip(
         stack: ItemStack,
-        player: Player,
-        lines: MutableList<Component>,
+        player: PlayerEntity,
+        lines: MutableList<Text>,
         config: TooltipETAConfig
     ) {
         val uses = ETAUtils.calculateArmorUses(stack, player)
@@ -88,47 +88,47 @@ object TooltipHandler {
             when (config.general.outputMode) {
                 TooltipETAConfig.OutputMode.DETAILED -> {
                     appendBaseHeader(lines, config, "tooltip.tooltipeta.estimated_uses")
-                    lines.add(Component.translatable("tooltip.tooltipeta.value_uses", formatted).withStyle(color))
+                    lines.add(Text.translatable("tooltip.tooltipeta.value_uses", formatted).formatted(color))
                     appendExtraInfoLines(stack, lines, config)
                 }
 
                 TooltipETAConfig.OutputMode.COMPACT -> {
                     appendBaseHeader(lines, config, "tooltip.tooltipeta.estimated_uses")
-                    lines.add(Component.translatable("tooltip.tooltipeta.compact_uses", formatted).withStyle(color))
+                    lines.add(Text.translatable("tooltip.tooltipeta.compact_uses", formatted).formatted(color))
                 }
             }
         }
     }
 
-    private fun appendBaseHeader(lines: MutableList<Component>, config: TooltipETAConfig, key: String) {
+    private fun appendBaseHeader(lines: MutableList<Text>, config: TooltipETAConfig, key: String) {
         if (config.display.showBlankSeparator) {
-            lines.add(Component.literal(""))
+            lines.add(Text.literal(""))
         }
 
         if (config.general.outputMode == TooltipETAConfig.OutputMode.DETAILED) {
-            lines.add(Component.translatable(key).withStyle(ChatFormatting.GRAY))
+            lines.add(Text.translatable(key).formatted(Formatting.GRAY))
         }
     }
 
-    private fun appendExtraInfoLines(stack: ItemStack, lines: MutableList<Component>, config: TooltipETAConfig) {
+    private fun appendExtraInfoLines(stack: ItemStack, lines: MutableList<Text>, config: TooltipETAConfig) {
         val remainingDurability = ETAUtils.getRemainingDurability(stack)
 
         if (config.display.showDurabilityLine) {
             lines.add(
-                Component.translatable(
+                Text.translatable(
                     "tooltip.tooltipeta.remaining_durability",
                     ETAUtils.formatNumber(remainingDurability, false),
-                    ETAUtils.formatNumber(stack.maxDamage, false)
-                ).withStyle(ChatFormatting.DARK_GRAY)
+                    ETAUtils.formatNumber(stack.getMaxDamage(), false)
+                ).formatted(Formatting.DARK_GRAY)
             )
         }
 
         if (config.display.showPercentLine) {
             lines.add(
-                Component.translatable(
+                Text.translatable(
                     "tooltip.tooltipeta.remaining_percent",
                     ETAUtils.formatPercent(ETAUtils.getRemainingRatio(stack))
-                ).withStyle(ChatFormatting.DARK_GRAY)
+                ).formatted(Formatting.DARK_GRAY)
             )
         }
     }

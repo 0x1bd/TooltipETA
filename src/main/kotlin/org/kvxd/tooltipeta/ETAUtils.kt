@@ -1,33 +1,32 @@
 package org.kvxd.tooltipeta
 
-import net.minecraft.ChatFormatting
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceKey
-import net.minecraft.tags.ItemTags
-import net.minecraft.world.entity.player.Player
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.enchantment.Enchantment
-import net.minecraft.world.item.enchantment.EnchantmentHelper
-import net.minecraft.world.item.enchantment.Enchantments
+import net.minecraft.util.Formatting
+import net.minecraft.registry.RegistryKeys
+import net.minecraft.registry.RegistryKey
+import net.minecraft.registry.tag.ItemTags
+import net.minecraft.entity.player.PlayerEntity
+import net.minecraft.item.ItemStack
+import net.minecraft.enchantment.Enchantment
+import net.minecraft.enchantment.EnchantmentHelper
+import net.minecraft.enchantment.Enchantments
 import java.util.Locale
 
 object ETAUtils {
 
     private fun getEnchantmentLevel(
-        player: Player,
-        enchantment: ResourceKey<Enchantment>,
+        player: PlayerEntity,
+        enchantment: RegistryKey<Enchantment>,
         stack: ItemStack
     ): Int {
-        val enchantments = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
-        return EnchantmentHelper.getItemEnchantmentLevel(
+        val enchantments = player.entityWorld.registryManager.getOrThrow(RegistryKeys.ENCHANTMENT)
+        return EnchantmentHelper.getLevel(
             enchantments.getOrThrow(enchantment),
             stack
         )
     }
 
-    fun calculateElytraTime(stack: ItemStack, player: Player): Int {
-        val durability = stack.maxDamage - stack.damageValue
+    fun calculateElytraTime(stack: ItemStack, player: PlayerEntity): Int {
+        val durability = stack.getMaxDamage() - stack.getDamage()
         if (durability <= 0) return 0
 
         val unbreakingLevel = getEnchantmentLevel(player, Enchantments.UNBREAKING, stack)
@@ -37,8 +36,8 @@ object ETAUtils {
         return effectiveDurability
     }
 
-    fun calculateToolUses(stack: ItemStack, player: Player): Int {
-        val durability = stack.maxDamage - stack.damageValue
+    fun calculateToolUses(stack: ItemStack, player: PlayerEntity): Int {
+        val durability = stack.getMaxDamage() - stack.getDamage()
         if (durability <= 0) return 0
 
         val unbreakingLevel = getEnchantmentLevel(player, Enchantments.UNBREAKING, stack)
@@ -47,8 +46,8 @@ object ETAUtils {
         return durability * averageMultiplier
     }
 
-    fun calculateArmorUses(stack: ItemStack, player: Player): Int {
-        val durability = stack.maxDamage - stack.damageValue
+    fun calculateArmorUses(stack: ItemStack, player: PlayerEntity): Int {
+        val durability = stack.getMaxDamage() - stack.getDamage()
         if (durability <= 0) return 0
 
         val unbreakingLevel = getEnchantmentLevel(player, Enchantments.UNBREAKING, stack)
@@ -58,11 +57,11 @@ object ETAUtils {
         return (durability * averageMultiplier).toInt()
     }
 
-    fun getEstimateColor(remainingRatio: Double, config: TooltipETAConfig): ChatFormatting {
+    fun getEstimateColor(remainingRatio: Double, config: TooltipETAConfig): Formatting {
         return when {
-            remainingRatio <= config.thresholds.criticalThresholdPercent -> ChatFormatting.RED
-            remainingRatio <= config.thresholds.warningThresholdPercent -> ChatFormatting.YELLOW
-            else -> ChatFormatting.GREEN
+            remainingRatio <= config.thresholds.criticalThresholdPercent -> Formatting.RED
+            remainingRatio <= config.thresholds.warningThresholdPercent -> Formatting.YELLOW
+            else -> Formatting.GREEN
         }
     }
 
@@ -105,16 +104,16 @@ object ETAUtils {
             ItemTags.FOOT_ARMOR
         )
 
-        return armorTags.any { tag -> stack.`is`(tag) }
+        return armorTags.any { tag -> stack.isIn(tag) }
     }
 
     fun getRemainingDurability(stack: ItemStack): Int {
-        return (stack.maxDamage - stack.damageValue).coerceAtLeast(0)
+        return (stack.getMaxDamage() - stack.getDamage()).coerceAtLeast(0)
     }
 
     fun getRemainingRatio(stack: ItemStack): Double {
-        if (stack.maxDamage <= 0) return 0.0
-        return getRemainingDurability(stack).toDouble() / stack.maxDamage
+        if (stack.getMaxDamage() <= 0) return 0.0
+        return getRemainingDurability(stack).toDouble() / stack.getMaxDamage()
     }
 
     fun formatPercent(ratio: Double): String {

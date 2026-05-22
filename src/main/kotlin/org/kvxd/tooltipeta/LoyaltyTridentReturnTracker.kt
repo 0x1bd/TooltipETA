@@ -1,12 +1,12 @@
 package org.kvxd.tooltipeta
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
-import net.minecraft.ChatFormatting
-import net.minecraft.client.Minecraft
-import net.minecraft.network.chat.Component
-import net.minecraft.world.entity.projectile.arrow.ThrownTrident
-import net.minecraft.world.phys.Vec3
-import org.kvxd.tooltipeta.mixin.ThrownTridentAccessor
+import net.minecraft.util.Formatting
+import net.minecraft.client.MinecraftClient
+import net.minecraft.text.Text
+import net.minecraft.entity.projectile.TridentEntity
+import net.minecraft.util.math.Vec3d
+import org.kvxd.tooltipeta.mixin.TridentEntityAccessor
 import java.util.Locale
 import kotlin.math.ceil
 
@@ -24,68 +24,69 @@ object LoyaltyTridentReturnTracker {
         }
     }
 
-    private fun tick(client: Minecraft) {
+    private fun tick(client: MinecraftClient) {
         val config = TooltipETAConfigManager.config
         if (!config.general.enabled || !config.features.showLoyaltyTridentReturnEta) return
 
         val player = client.player ?: return
-        val level = client.level ?: return
+        val level = client.world ?: return
 
-        val estimate = level.entitiesForRendering()
+        val estimate = level.entities
             .asSequence()
-            .filterIsInstance<ThrownTrident>()
+            .filterIsInstance<TridentEntity>()
             .mapNotNull { trident -> estimateReturn(trident, client) }
             .minByOrNull { it.ticks }
             ?: return
 
-        player.sendOverlayMessage(
-            Component.translatable(
+        player.sendMessage(
+            Text.translatable(
                 "tooltip.tooltipeta.trident_return_eta",
                 loyaltyName(estimate.loyaltyLevel),
-                Component.literal(formatSeconds(estimate.ticks)).withStyle(etaColor(estimate.ticks)),
-                Component.translatable(
+                Text.literal(formatSeconds(estimate.ticks)).formatted(etaColor(estimate.ticks)),
+                Text.translatable(
                     "tooltip.tooltipeta.trident_return_distance",
                     formatDistance(estimate.distance)
-                ).withStyle(distanceColor(estimate.distance))
-            ).withStyle(ChatFormatting.GRAY)
+                ).formatted(distanceColor(estimate.distance))
+            ).formatted(Formatting.GRAY),
+            true
         )
     }
 
-    private fun estimateReturn(trident: ThrownTrident, client: Minecraft): ReturnEstimate? {
+    private fun estimateReturn(trident: TridentEntity, client: MinecraftClient): ReturnEstimate? {
         val player = client.player ?: return null
         val owner = trident.owner ?: return null
         if (owner.uuid != player.uuid) return null
         if (!owner.isAlive || player.isSpectator) return null
-        if (!trident.isNoPhysics && trident.clientSideReturnTridentTickCount <= 0) return null
+        if (!trident.noClip && trident.returnTimer <= 0) return null
 
         val loyaltyLevel = getLoyaltyLevel(trident)
         if (loyaltyLevel <= 0) return null
 
         val ticks = simulateReturnTicks(
-            startPosition = trident.position(),
-            startVelocity = trident.deltaMovement,
-            targetPosition = player.eyePosition,
-            targetVelocity = player.deltaMovement,
-            pickupDistance = player.bbWidth + 1.0,
+            startPosition = trident.entityPos,
+            startVelocity = trident.velocity,
+            targetPosition = player.eyePos,
+            targetVelocity = player.velocity,
+            pickupDistance = player.width + 1.0,
             loyaltyLevel = loyaltyLevel
         ) ?: return null
 
         return ReturnEstimate(
             ticks = ticks,
             loyaltyLevel = loyaltyLevel,
-            distance = trident.position().distanceTo(player.eyePosition)
+            distance = trident.entityPos.distanceTo(player.eyePos)
         )
     }
 
-    private fun getLoyaltyLevel(trident: ThrownTrident): Int {
-        return trident.entityData.get(ThrownTridentAccessor.getLoyaltyDataAccessor()).toInt()
+    private fun getLoyaltyLevel(trident: TridentEntity): Int {
+        return trident.dataTracker.get(TridentEntityAccessor.getLoyaltyDataAccessor()).toInt()
     }
 
     private fun simulateReturnTicks(
-        startPosition: Vec3,
-        startVelocity: Vec3,
-        targetPosition: Vec3,
-        targetVelocity: Vec3,
+        startPosition: Vec3d,
+        startVelocity: Vec3d,
+        targetPosition: Vec3d,
+        targetVelocity: Vec3d,
         pickupDistance: Double,
         loyaltyLevel: Int
     ): Int? {
@@ -94,26 +95,26 @@ object LoyaltyTridentReturnTracker {
         var target = targetPosition
         val pickupDistanceSqr = pickupDistance * pickupDistance
 
-        if (target.subtract(position).lengthSqr() <= pickupDistanceSqr) {
+        if (target.subtract(position).lengthSquared() <= pickupDistanceSqr) {
             return 1
         }
 
         for (tick in 1..MAX_SIMULATED_TICKS) {
             val toTarget = target.subtract(position)
-            if (toTarget.lengthSqr() <= pickupDistanceSqr) {
+            if (toTarget.lengthSquared() <= pickupDistanceSqr) {
                 return tick
             }
 
-            position = Vec3(
+            position = Vec3d(
                 position.x,
                 position.y + toTarget.y * RETURN_VERTICAL_CATCHUP * loyaltyLevel,
                 position.z
             )
             velocity = velocity
-                .scale(RETURN_VELOCITY_DAMPING)
-                .add(toTarget.normalize().scale(RETURN_ACCELERATION_PER_LEVEL * loyaltyLevel))
+                .multiply(RETURN_VELOCITY_DAMPING)
+                .add(toTarget.normalize().multiply(RETURN_ACCELERATION_PER_LEVEL * loyaltyLevel))
             position = position.add(velocity)
-            velocity = velocity.scale(POST_MOVE_INERTIA)
+            velocity = velocity.multiply(POST_MOVE_INERTIA)
             target = target.add(targetVelocity)
         }
 
@@ -137,25 +138,25 @@ object LoyaltyTridentReturnTracker {
         }
     }
 
-    private fun etaColor(ticks: Int): ChatFormatting {
+    private fun etaColor(ticks: Int): Formatting {
         return when {
-            ticks <= 40 -> ChatFormatting.GREEN
-            ticks <= 80 -> ChatFormatting.YELLOW
-            else -> ChatFormatting.RED
+            ticks <= 40 -> Formatting.GREEN
+            ticks <= 80 -> Formatting.YELLOW
+            else -> Formatting.RED
         }
     }
 
-    private fun distanceColor(distance: Double): ChatFormatting {
+    private fun distanceColor(distance: Double): Formatting {
         return when {
-            distance <= 10.0 -> ChatFormatting.GREEN
-            distance <= 25.0 -> ChatFormatting.YELLOW
-            else -> ChatFormatting.RED
+            distance <= 10.0 -> Formatting.GREEN
+            distance <= 25.0 -> Formatting.YELLOW
+            else -> Formatting.RED
         }
     }
 
-    private fun loyaltyName(level: Int): Component {
-        return Component.translatable("enchantment.minecraft.loyalty")
-            .withStyle(ChatFormatting.AQUA)
+    private fun loyaltyName(level: Int): Text {
+        return Text.translatable("enchantment.minecraft.loyalty")
+            .formatted(Formatting.AQUA)
             .append(" ")
             .append(
                 when (level) {

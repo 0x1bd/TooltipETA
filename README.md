@@ -47,7 +47,7 @@ You can edit settings in-game from:
 
 ## Compatibility
 
-- Minecraft: `26.1.2+` (Fabric)
+- Minecraft: `1.21.11` (Fabric)
 - Environment: client only
 
 ## Development
